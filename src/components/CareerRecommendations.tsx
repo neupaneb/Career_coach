@@ -1,7 +1,10 @@
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { TrendingUp, Star, Clock, MapPin } from 'lucide-react';
+import { Alert, AlertDescription } from './ui/alert';
+import { TrendingUp, Star, Clock, MapPin, Heart, ExternalLink, Loader2, CheckCircle } from 'lucide-react';
+import { useApp } from '../context/AppContext';
 
 const recommendations = [
   {
@@ -47,8 +50,83 @@ const skillSuggestions = [
 ];
 
 export function CareerRecommendations() {
+  const { savedJobs, appliedJobs, addSavedJob, addAppliedJob, error } = useApp();
+  const [isLoading, setIsLoading] = useState(false);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [localAppliedJobs, setLocalAppliedJobs] = useState<number[]>([]);
+
+  const handleSaveJob = async (jobId: number) => {
+    setIsLoading(true);
+    setActionSuccess(null);
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const job = recommendations.find(j => j.id === jobId);
+      if (job) {
+        const savedJob = {
+          id: job.id,
+          title: job.title,
+          company: job.company,
+          location: job.location,
+          salary: job.salary,
+          skills: job.skills,
+          type: job.type,
+          postedDays: job.postedDays,
+          savedDate: new Date().toISOString().split('T')[0]
+        };
+        addSavedJob(savedJob);
+        setActionSuccess(`Job "${job.title}" saved successfully!`);
+        setTimeout(() => setActionSuccess(null), 3000);
+      }
+    } catch (err) {
+      console.error('Error saving job:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleApplyJob = async (jobId: number) => {
+    setIsLoading(true);
+    setActionSuccess(null);
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      if (!localAppliedJobs.includes(jobId)) {
+        setLocalAppliedJobs([...localAppliedJobs, jobId]);
+        addAppliedJob(jobId);
+        const job = recommendations.find(j => j.id === jobId);
+        if (job) {
+          setActionSuccess(`Application submitted for "${job.title}"!`);
+          setTimeout(() => setActionSuccess(null), 3000);
+        }
+      }
+    } catch (err) {
+      console.error('Error applying to job:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const isJobSaved = (jobId: number) => savedJobs.some(job => job.id === jobId);
+  const isJobApplied = (jobId: number) => localAppliedJobs.includes(jobId);
   return (
     <div className="space-y-6">
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      
+      {actionSuccess && (
+        <Alert variant="default">
+          <CheckCircle className="h-4 w-4" />
+          <AlertDescription>{actionSuccess}</AlertDescription>
+        </Alert>
+      )}
       <Card className="shadow-sm">
         <CardHeader>
           <div className="flex items-center gap-2">
@@ -96,11 +174,50 @@ export function CareerRecommendations() {
               </div>
               
               <div className="flex gap-2">
-                <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                  Apply Now
+                <Button 
+                  size="sm" 
+                  className={`${
+                    isJobApplied(job.id) 
+                      ? 'bg-green-600 hover:bg-green-700' 
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
+                  onClick={() => handleApplyJob(job.id)}
+                  disabled={isJobApplied(job.id) || isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                      Processing...
+                    </>
+                  ) : isJobApplied(job.id) ? (
+                    <>
+                      <Star className="h-4 w-4 mr-1" />
+                      Applied
+                    </>
+                  ) : (
+                    <>
+                      <ExternalLink className="h-4 w-4 mr-1" />
+                      Apply Now
+                    </>
+                  )}
                 </Button>
-                <Button size="sm" variant="outline">
-                  Save Job
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => handleSaveJob(job.id)}
+                  disabled={isLoading}
+                  className={`${
+                    isJobSaved(job.id) 
+                      ? 'border-red-500 text-red-600 hover:bg-red-50' 
+                      : ''
+                  }`}
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  ) : (
+                    <Heart className={`h-4 w-4 mr-1 ${isJobSaved(job.id) ? 'fill-current' : ''}`} />
+                  )}
+                  {isJobSaved(job.id) ? 'Saved' : 'Save Job'}
                 </Button>
               </div>
             </div>

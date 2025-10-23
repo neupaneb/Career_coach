@@ -4,15 +4,24 @@ import { TopNavbar } from './TopNavbar';
 import { CareerRecommendations } from './CareerRecommendations';
 import { UserProfile } from './UserProfile';
 import { SkillTracker } from './SkillTracker';
+import { Settings } from './Settings';
+import { SavedJobs } from './SavedJobs';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
+import { useApp } from '../context/AppContext';
 
 interface DashboardProps {
   onLogout: () => void;
 }
 
 export function Dashboard({ onLogout }: DashboardProps) {
+  const { logout } = useApp();
   const [activeTab, setActiveTab] = useState('home');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    onLogout();
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -23,7 +32,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
               <CareerRecommendations />
             </div>
             <div className="space-y-6">
-              <UserProfile onLogout={onLogout} />
+              <UserProfile onLogout={handleLogout} />
               <div className="lg:hidden">
                 <SkillTracker />
               </div>
@@ -44,20 +53,25 @@ export function Dashboard({ onLogout }: DashboardProps) {
             <SkillTracker />
           </div>
         );
+      case 'saved-jobs':
+        return (
+          <div className="max-w-4xl">
+            <h2 className="mb-6">Saved Jobs</h2>
+            <SavedJobs />
+          </div>
+        );
       case 'profile':
         return (
           <div className="max-w-2xl">
             <h2 className="mb-6">My Profile</h2>
-            <UserProfile onLogout={onLogout} />
+            <UserProfile onLogout={handleLogout} />
           </div>
         );
       case 'settings':
         return (
-          <div className="max-w-2xl">
+          <div className="max-w-4xl">
             <h2 className="mb-6">Settings</h2>
-            <div className="bg-card border border-border rounded-lg p-6">
-              <p className="text-muted-foreground">Settings panel coming soon...</p>
-            </div>
+            <Settings />
           </div>
         );
       default:

@@ -1,21 +1,47 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LoginPage } from './components/LoginPage';
 import { Dashboard } from './components/Dashboard';
+import { AppProvider, useApp } from './context/AppContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { Loader2 } from 'lucide-react';
 
-export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+function AppContent() {
+  const { user, isLoading } = useApp();
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  const handleLogin = () => {
-    setIsLoggedIn(true);
-  };
+  useEffect(() => {
+    // Simulate initialization time
+    const timer = setTimeout(() => {
+      setIsInitialized(true);
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-  };
-
-  if (!isLoggedIn) {
-    return <LoginPage onLogin={handleLogin} />;
+  if (!isInitialized || isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-teal-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-muted-foreground">Loading Career Coach AI...</p>
+        </div>
+      </div>
+    );
   }
 
-  return <Dashboard onLogout={handleLogout} />;
+  if (!user) {
+    return <LoginPage onLogin={() => {}} />;
+  }
+
+  return <Dashboard onLogout={() => {}} />;
+}
+
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <AppProvider>
+        <AppContent />
+      </AppProvider>
+    </ErrorBoundary>
+  );
 }
