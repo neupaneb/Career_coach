@@ -8,6 +8,7 @@ export interface IUser extends Document {
   lastName: string;
   title: string;
   bio: string;
+  profilePicture: string;
   skills: string[];
   careerGoals: string[];
   experience: string;
@@ -68,6 +69,10 @@ const UserSchema = new Schema<IUser>({
     type: String,
     default: '',
     maxlength: 500
+  },
+  profilePicture: {
+    type: String,
+    default: ''
   },
   savedJobs: [{
     type: Schema.Types.ObjectId,

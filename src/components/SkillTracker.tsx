@@ -45,9 +45,10 @@ const weeklyActivity = [
 ];
 
 export function SkillTracker() {
-  return (
-    <div className="space-y-6">
-      <Card className="shadow-sm">
+  try {
+    return (
+      <div className="space-y-6">
+        <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-blue-50/30">
         <CardHeader>
           <div className="flex items-center gap-2">
             <BookOpen className="h-5 w-5 text-blue-600" />
@@ -86,7 +87,7 @@ export function SkillTracker() {
         </CardContent>
       </Card>
       
-      <Card className="shadow-sm">
+      <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-green-50/30">
         <CardHeader>
           <div className="flex items-center gap-2">
             <Target className="h-5 w-5 text-green-600" />
@@ -126,7 +127,7 @@ export function SkillTracker() {
         </CardContent>
       </Card>
       
-      <Card className="shadow-sm">
+      <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-teal-50/30">
         <CardHeader>
           <CardTitle>Weekly Learning Activity</CardTitle>
         </CardHeader>
@@ -149,5 +150,17 @@ export function SkillTracker() {
         </CardContent>
       </Card>
     </div>
-  );
+    );
+  } catch (error) {
+    console.error('Error rendering SkillTracker:', error);
+    return (
+      <div className="space-y-6">
+        <Card className="shadow-lg">
+          <CardContent className="p-6">
+            <p className="text-red-600">Failed to load skill tracker. Please refresh the page.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 }

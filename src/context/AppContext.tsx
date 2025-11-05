@@ -9,6 +9,7 @@ interface User {
   title: string;
   location: string;
   bio: string;
+  profilePicture?: string;
   experience: string;
   skills: string[];
   careerGoals: string[];
@@ -96,44 +97,127 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Load user data from API on mount
   useEffect(() => {
+    let isMounted = true;
+    let timeoutId: NodeJS.Timeout | null = null;
+
     const loadUserData = async () => {
-      if (apiService.isAuthenticated()) {
-        try {
+      try {
+        if (apiService.isAuthenticated()) {
           setIsLoading(true);
-          const response = await apiService.getCurrentUser();
-          setUser(response.user);
           
-          // Load saved and applied jobs
-          const [savedResponse, appliedResponse] = await Promise.all([
-            apiService.getSavedJobs(),
-            apiService.getAppliedJobs()
-          ]);
+          // Add timeout to prevent hanging
+          const timeoutPromise = new Promise((_, reject) => {
+            timeoutId = setTimeout(() => reject(new Error('Request timeout')), 5000);
+          });
+
+          const response = await Promise.race([
+            apiService.getCurrentUser(),
+            timeoutPromise
+          ]) as any;
+
+          if (isMounted && response?.user) {
+            setUser(response.user);
+            
+            // Load saved and applied jobs with timeout
+            try {
+              const [savedResponse, appliedResponse] = await Promise.all([
+                Promise.race([
+                  apiService.getSavedJobs(),
+                  new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
+                ]),
+                Promise.race([
+                  apiService.getAppliedJobs(),
+                  new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
+                ])
+              ]) as any[];
+              
+              if (isMounted) {
+                setSavedJobs(savedResponse?.savedJobs || []);
+                setAppliedJobs(appliedResponse?.appliedJobs || []);
+              }
+            } catch (jobError) {
+              console.warn('Failed to load jobs, using localStorage:', jobError);
+            }
+          }
+        } else {
+          // Not authenticated, try localStorage
+          const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
+          const storedSavedJobs = localStorage.getItem(STORAGE_KEYS.SAVED_JOBS);
+          const storedAppliedJobs = localStorage.getItem(STORAGE_KEYS.APPLIED_JOBS);
           
-          setSavedJobs(savedResponse.savedJobs || []);
-          setAppliedJobs(appliedResponse.appliedJobs || []);
-        } catch (error) {
-          console.error('Error loading user data from API, falling back to localStorage:', error);
-          // Fall back to localStorage if API is not available
+          if (isMounted) {
+            if (storedUser) {
+              try {
+                setUser(JSON.parse(storedUser));
+              } catch (e) {
+                console.error('Failed to parse stored user:', e);
+              }
+            }
+            if (storedSavedJobs) {
+              try {
+                setSavedJobs(JSON.parse(storedSavedJobs));
+              } catch (e) {
+                console.error('Failed to parse stored saved jobs:', e);
+              }
+            }
+            if (storedAppliedJobs) {
+              try {
+                setAppliedJobs(JSON.parse(storedAppliedJobs));
+              } catch (e) {
+                console.error('Failed to parse stored applied jobs:', e);
+              }
+            }
+          }
+        }
+      } catch (error: any) {
+        console.error('Error loading user data from API, falling back to localStorage:', error);
+        // Fall back to localStorage if API is not available
+        if (isMounted) {
           const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
           const storedSavedJobs = localStorage.getItem(STORAGE_KEYS.SAVED_JOBS);
           const storedAppliedJobs = localStorage.getItem(STORAGE_KEYS.APPLIED_JOBS);
           
           if (storedUser) {
-            setUser(JSON.parse(storedUser));
+            try {
+              setUser(JSON.parse(storedUser));
+            } catch (e) {
+              console.error('Failed to parse stored user:', e);
+            }
           }
           if (storedSavedJobs) {
-            setSavedJobs(JSON.parse(storedSavedJobs));
+            try {
+              setSavedJobs(JSON.parse(storedSavedJobs));
+            } catch (e) {
+              console.error('Failed to parse stored saved jobs:', e);
+            }
           }
           if (storedAppliedJobs) {
-            setAppliedJobs(JSON.parse(storedAppliedJobs));
+            try {
+              setAppliedJobs(JSON.parse(storedAppliedJobs));
+            } catch (e) {
+              console.error('Failed to parse stored applied jobs:', e);
+            }
           }
-        } finally {
+        }
+      } finally {
+        if (isMounted) {
           setIsLoading(false);
+        }
+        if (timeoutId) {
+          clearTimeout(timeoutId);
         }
       }
     };
 
     loadUserData();
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, []);
 
   const clearError = () => {

@@ -1,15 +1,26 @@
 import { Request, Response } from 'express';
 import Job from '../models/Job';
 import User from '../models/User';
+import { AuthRequest } from '../middleware/auth';
 
-export const getJobRecommendations = async (req: Request, res: Response) => {
+export const getJobRecommendations = async (req: AuthRequest, res: Response) => {
   try {
-    const { userId } = req.params;
+    const userId = req.user?._id;
+    
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Authentication required. Please log in.' 
+      });
+    }
     
     // Get user's skills and preferences
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'User not found.' 
+      });
     }
 
     // Find jobs that match user's skills and experience level
@@ -35,10 +46,17 @@ export const getJobRecommendations = async (req: Request, res: Response) => {
     // Sort by match percentage
     recommendations.sort((a, b) => b.matchPercentage - a.matchPercentage);
 
-    res.json({ recommendations });
+    res.json({ 
+      success: true,
+      message: 'Job recommendations retrieved successfully.',
+      recommendations 
+    });
   } catch (error) {
     console.error('Get recommendations error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error while retrieving job recommendations.' 
+    });
   }
 };
 
@@ -69,6 +87,8 @@ export const getAllJobs = async (req: Request, res: Response) => {
     const total = await Job.countDocuments(query);
 
     res.json({
+      success: true,
+      message: 'Jobs retrieved successfully.',
       jobs,
       pagination: {
         page: Number(page),
@@ -79,7 +99,10 @@ export const getAllJobs = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Get jobs error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error while retrieving jobs.' 
+    });
   }
 };
 
@@ -89,13 +112,23 @@ export const getJobById = async (req: Request, res: Response) => {
     const job = await Job.findById(id);
     
     if (!job) {
-      return res.status(404).json({ message: 'Job not found' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'Job not found.' 
+      });
     }
 
-    res.json({ job });
+    res.json({ 
+      success: true,
+      message: 'Job retrieved successfully.',
+      job 
+    });
   } catch (error) {
     console.error('Get job error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error while retrieving job.' 
+    });
   }
 };
 
@@ -116,9 +149,16 @@ export const getTrendingSkills = async (req: Request, res: Response) => {
       growth: `+${Math.floor(Math.random() * 30) + 10}%` // Mock growth data
     }));
 
-    res.json({ trendingSkills });
+    res.json({ 
+      success: true,
+      message: 'Trending skills retrieved successfully.',
+      trendingSkills 
+    });
   } catch (error) {
     console.error('Get trending skills error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error while retrieving trending skills.' 
+    });
   }
 };

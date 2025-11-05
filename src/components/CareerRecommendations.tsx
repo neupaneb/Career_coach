@@ -127,7 +127,7 @@ export function CareerRecommendations() {
           <AlertDescription>{actionSuccess}</AlertDescription>
         </Alert>
       )}
-      <Card className="shadow-sm">
+      <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-blue-50/30">
         <CardHeader>
           <div className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-blue-600" />
@@ -139,7 +139,7 @@ export function CareerRecommendations() {
         </CardHeader>
         <CardContent className="space-y-4">
           {recommendations.map((job) => (
-            <div key={job.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+            <div key={job.id} className="border rounded-lg p-4 hover:shadow-lg transition-all duration-300 bg-white hover:border-blue-300 relative z-0">
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <h4 className="mb-1">{job.title}</h4>
@@ -176,7 +176,7 @@ export function CareerRecommendations() {
               <div className="flex gap-2">
                 <Button 
                   size="sm" 
-                  className={`${
+                  className={`relative z-10 ${
                     isJobApplied(job.id) 
                       ? 'bg-green-600 hover:bg-green-700' 
                       : 'bg-blue-600 hover:bg-blue-700'
@@ -206,7 +206,7 @@ export function CareerRecommendations() {
                   variant="outline"
                   onClick={() => handleSaveJob(job.id)}
                   disabled={isLoading}
-                  className={`${
+                  className={`relative z-10 ${
                     isJobSaved(job.id) 
                       ? 'border-red-500 text-red-600 hover:bg-red-50' 
                       : ''
@@ -225,7 +225,7 @@ export function CareerRecommendations() {
         </CardContent>
       </Card>
       
-      <Card className="shadow-sm">
+      <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-teal-50/30">
         <CardHeader>
           <CardTitle>Trending Skills to Learn</CardTitle>
           <CardDescription>
@@ -235,7 +235,7 @@ export function CareerRecommendations() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {skillSuggestions.map((item) => (
-              <div key={item.skill} className="border rounded-lg p-4">
+              <div key={item.skill} className="border rounded-lg p-4 hover:shadow-md transition-all duration-300 bg-white hover:border-teal-300 relative z-0">
                 <div className="flex justify-between items-start mb-2">
                   <h4>{item.skill}</h4>
                   <Badge 
@@ -248,7 +248,7 @@ export function CareerRecommendations() {
                 <p className="text-sm text-muted-foreground mb-3">
                   Growth: <span className="text-green-600">{item.growth}</span>
                 </p>
-                <Button size="sm" variant="outline" className="w-full">
+                <Button size="sm" variant="outline" className="w-full relative z-10">
                   Start Learning
                 </Button>
               </div>

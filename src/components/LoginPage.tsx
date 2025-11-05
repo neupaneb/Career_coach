@@ -160,11 +160,11 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         
         <Card className="shadow-lg border-0">
           <CardHeader className="text-center">
-            <CardTitle>{isSignUp ? 'Create Account' : 'Welcome Back'}</CardTitle>
+            <CardTitle>{isSignUp ? 'Create Account' : 'Welcome to Career Coach'}</CardTitle>
             <CardDescription>
               {isSignUp 
                 ? 'Start your career journey with AI guidance' 
-                : 'Sign in to continue your career path'
+                : "Let's build your career together"
               }
             </CardDescription>
           </CardHeader>

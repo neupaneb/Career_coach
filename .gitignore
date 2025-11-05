@@ -1,3 +1,21 @@
+# Common
+.env
+*.env
+.DS_Store
+__pycache__/
+*.log
+
+# Node / React
+node_modules/
+frontend/node_modules/
+frontend/.env
+frontend/build/
+
+# Python / Flask
+backend/__pycache__/
+backend/venv/
+backend/.env
+instance/
 # Dependencies
 node_modules/
 npm-debug.log*

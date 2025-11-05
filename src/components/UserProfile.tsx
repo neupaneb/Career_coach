@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Alert, AlertDescription } from './ui/alert';
 import { MapPin, Calendar, Trophy, LogOut, Edit, Save, X, Plus, Loader2, CheckCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { ProfilePictureUpload } from './ProfilePictureUpload';
 
 const userSkills = [
   'JavaScript', 'React', 'TypeScript', 'Node.js', 'Python', 'SQL', 'Git', 'AWS'
@@ -125,18 +126,18 @@ export function UserProfile({ onLogout }: UserProfileProps) {
   return (
     <div className="space-y-6">
       {error && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="relative z-10">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
       
       {saveSuccess && (
-        <Alert variant="default">
+        <Alert variant="default" className="relative z-10">
           <CheckCircle className="h-4 w-4" />
           <AlertDescription>Profile updated successfully!</AlertDescription>
         </Alert>
       )}
-      <Card className="shadow-sm">
+      <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-blue-50/30">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Profile Overview</CardTitle>
@@ -152,12 +153,28 @@ export function UserProfile({ onLogout }: UserProfileProps) {
           </div>
         </CardHeader>
         <CardContent>
+          <div className="mb-6">
+            <ProfilePictureUpload
+              currentPicture={user.profilePicture}
+              onUpload={(imageUrl) => updateUserProfile({ profilePicture: imageUrl })}
+              isLoading={isSaving}
+            />
+          </div>
+          
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-teal-500 rounded-full flex items-center justify-center">
-                <span className="text-primary-foreground text-xl">
-                  {user.firstName[0]}{user.lastName[0]}
-                </span>
+              <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-blue-200 bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center shadow-md flex-shrink-0">
+                {user.profilePicture ? (
+                  <img 
+                    src={user.profilePicture} 
+                    alt={`${user.firstName} ${user.lastName}`}
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                ) : (
+                  <span className="text-white text-xl font-semibold">
+                    {user.firstName[0]}{user.lastName[0]}
+                  </span>
+                )}
               </div>
               <div>
                 {isEditing ? (
@@ -233,7 +250,7 @@ export function UserProfile({ onLogout }: UserProfileProps) {
               variant="outline" 
               size="sm" 
               onClick={onLogout}
-              className="flex items-center gap-2 text-destructive hover:text-destructive-foreground hover:bg-destructive"
+              className="flex items-center gap-2 text-destructive hover:text-destructive-foreground hover:bg-destructive relative z-10"
             >
               <LogOut className="h-4 w-4" />
               Log Out
@@ -292,7 +309,7 @@ export function UserProfile({ onLogout }: UserProfileProps) {
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="h-4 w-4 p-0 hover:bg-transparent"
+                        className="h-4 w-4 p-0 hover:bg-transparent relative z-10"
                         onClick={() => removeSkill(skill)}
                       >
                         <X className="h-3 w-3" />
@@ -335,7 +352,7 @@ export function UserProfile({ onLogout }: UserProfileProps) {
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="h-4 w-4 p-0 hover:bg-transparent"
+                        className="h-4 w-4 p-0 hover:bg-transparent relative z-10"
                         onClick={() => removeGoal(goal)}
                       >
                         <X className="h-3 w-3" />
@@ -370,7 +387,7 @@ export function UserProfile({ onLogout }: UserProfileProps) {
         </CardContent>
       </Card>
       
-      <Card className="shadow-sm">
+      <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-yellow-50/30">
         <CardHeader>
           <div className="flex items-center gap-2">
             <Trophy className="h-5 w-5 text-yellow-600" />

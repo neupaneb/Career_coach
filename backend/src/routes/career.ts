@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { getJobRecommendations, getAllJobs, getJobById, getTrendingSkills } from '../controllers/careerController';
+import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
 
-// GET /api/career/recommendations/:userId
-router.get('/recommendations/:userId', getJobRecommendations);
+// GET /api/career/recommendations - Get job recommendations for authenticated user
+router.get('/recommendations', authenticateToken, getJobRecommendations);
 
 // GET /api/career/jobs
 router.get('/jobs', getAllJobs);

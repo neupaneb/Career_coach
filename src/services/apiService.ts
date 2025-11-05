@@ -11,17 +11,24 @@ class ApiService {
 
   private async request(endpoint: string, options: RequestInit = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
+    
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
         ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
         ...options.headers,
       },
+      signal: controller.signal,
       ...options,
     };
 
     try {
       const response = await fetch(url, config);
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -29,7 +36,15 @@ class ApiService {
       }
 
       return await response.json();
-    } catch (error) {
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+      
+      // Handle abort (timeout)
+      if (error.name === 'AbortError') {
+        console.error('API request timeout:', endpoint);
+        throw new Error('Request timeout. Please check your connection.');
+      }
+      
       console.error('API request failed:', error);
       throw error;
     }
