@@ -1,11 +1,8 @@
+# AI Career Coach Web App
 
-  # AI Career Coach Web App
+## Running the Code
 
+Run `npm install` in both frontend and backend folders to install the dependencies.
 
+Run `npm run dev` in each folder to start the development servers.
 
-  ## Running the code
-
-  Run `npm i` to install the dependencies.
-
-  Run `npm run dev` to start the development server.
-  
