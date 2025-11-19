@@ -12,6 +12,9 @@ export interface IUser extends Document {
   skills: string[];
   careerGoals: string[];
   experience: string;
+  experienceSummary?: string;
+  projects: string[];
+  education: string[];
   location: string;
   savedJobs: mongoose.Types.ObjectId[];
   appliedJobs: mongoose.Types.ObjectId[];
@@ -56,6 +59,19 @@ const UserSchema = new Schema<IUser>({
     enum: ['entry', 'mid', 'senior', 'executive'],
     default: 'entry'
   },
+  experienceSummary: {
+    type: String,
+    default: '',
+    maxlength: 1000
+  },
+  projects: [{
+    type: String,
+    trim: true
+  }],
+  education: [{
+    type: String,
+    trim: true
+  }],
   location: {
     type: String,
     trim: true

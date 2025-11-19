@@ -5,7 +5,7 @@ import { AuthRequest } from '../middleware/auth';
 
 export const updateProfile = async (req: AuthRequest, res: Response) => {
   try {
-    const { firstName, lastName, title, bio, skills, careerGoals, experience, location, profilePicture } = req.body;
+    const { firstName, lastName, title, bio, skills, careerGoals, experience, experienceSummary, projects, education, location, profilePicture } = req.body;
     const userId = req.user?._id;
 
     if (!userId) {
@@ -24,6 +24,9 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
     if (skills !== undefined) updateData.skills = skills;
     if (careerGoals !== undefined) updateData.careerGoals = careerGoals;
     if (experience !== undefined) updateData.experience = experience;
+    if (experienceSummary !== undefined) updateData.experienceSummary = experienceSummary;
+    if (projects !== undefined) updateData.projects = projects;
+    if (education !== undefined) updateData.education = education;
     if (location !== undefined) updateData.location = location;
     if (profilePicture !== undefined) updateData.profilePicture = profilePicture;
 

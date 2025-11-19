@@ -1,5 +1,5 @@
 // API service for Career Coach AI
-const API_BASE_URL = import.meta.env.VITE_REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_REACT_APP_API_URL || 'http://localhost:5001/api';
 
 class ApiService {
   private token: string | null = null;
@@ -170,6 +170,42 @@ class ApiService {
 
   async getTrendingSkills() {
     return this.request('/career/trending-skills');
+  }
+
+  // Resume upload
+  async uploadResume(formData: FormData) {
+    const url = `${API_BASE_URL}/user/upload-resume`;
+    // Get fresh token from localStorage in case it was updated
+    const token = localStorage.getItem('career_coach_token') || this.token;
+    
+    if (!token) {
+      throw new Error('Authentication required. Please log in again.');
+    }
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        // Don't set Content-Type - browser will set it automatically with boundary for FormData
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.message || `HTTP error! status: ${response.status}`;
+      
+      if (response.status === 401 || response.status === 403) {
+        // Token might be invalid, clear it
+        this.token = null;
+        localStorage.removeItem('career_coach_token');
+        throw new Error('Authentication failed. Please log in again.');
+      }
+      
+      throw new Error(errorMessage);
+    }
+
+    return await response.json();
   }
 
   // Utility methods

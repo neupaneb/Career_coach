@@ -10,6 +10,7 @@ import {
   getSavedJobs,
   getAppliedJobs
 } from '../controllers/userController';
+import { uploadResume, upload } from '../controllers/resumeController';
 import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
@@ -44,6 +45,9 @@ router.get('/saved-jobs', getSavedJobs);
 
 // GET /api/user/applied-jobs
 router.get('/applied-jobs', getAppliedJobs);
+
+// POST /api/user/upload-resume
+router.post('/upload-resume', upload.single('resume'), uploadResume);
 
 export default router;
 

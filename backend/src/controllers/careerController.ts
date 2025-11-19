@@ -23,19 +23,118 @@ export const getJobRecommendations = async (req: AuthRequest, res: Response) => 
       });
     }
 
-    // Find jobs that match user's skills and experience level
-    const jobs = await Job.find({
-      isActive: true,
-      experience: { $lte: user.experience },
-      skills: { $in: user.skills }
-    }).limit(10);
+    // Build query based on user profile data
+    const query: any = { isActive: true };
 
-    // Calculate match percentage for each job
+    // Match experience level (entry < mid < senior < executive)
+    const experienceLevels = ['entry', 'mid', 'senior', 'executive'];
+    const userExpIndex = experienceLevels.indexOf(user.experience);
+    if (userExpIndex >= 0) {
+      query.experience = { $in: experienceLevels.slice(userExpIndex) };
+    }
+
+    // Match skills if user has any
+    if (user.skills && user.skills.length > 0) {
+      query.skills = { $in: user.skills };
+    }
+
+    // Find jobs that match user's profile
+    let jobs = await Job.find(query).limit(20);
+
+    // If no jobs found with exact skill match, try broader search
+    if (jobs.length === 0 && user.skills && user.skills.length > 0) {
+      // Try matching any skill
+      jobs = await Job.find({
+        isActive: true,
+        experience: query.experience,
+        skills: { $in: user.skills }
+      }).limit(20);
+    }
+
+    // If still no jobs, get jobs by experience level only
+    if (jobs.length === 0 && query.experience) {
+      jobs = await Job.find({
+        isActive: true,
+        experience: query.experience
+      }).limit(20);
+    }
+
+    // If still no jobs, get any active jobs
+    if (jobs.length === 0) {
+      jobs = await Job.find({
+        isActive: true
+      }).limit(20);
+    }
+
+    // Calculate match percentage for each job based on multiple factors
     const recommendations = jobs.map(job => {
-      const matchingSkills = job.skills.filter(skill => 
-        user.skills.includes(skill)
-      ).length;
-      const matchPercentage = Math.round((matchingSkills / job.skills.length) * 100);
+      let matchScore = 0;
+      let maxScore = 0;
+
+      // Skill matching (60% weight)
+      if (user.skills && user.skills.length > 0 && job.skills && job.skills.length > 0) {
+        const matchingSkills = job.skills.filter(skill => 
+          user.skills.includes(skill)
+        ).length;
+        const skillMatch = (matchingSkills / job.skills.length) * 60;
+        matchScore += skillMatch;
+      }
+      maxScore += 60;
+
+      // Experience level matching (20% weight)
+      if (job.experience === user.experience) {
+        matchScore += 20;
+      } else {
+        const jobExpIndex = experienceLevels.indexOf(job.experience);
+        if (jobExpIndex >= 0 && jobExpIndex <= userExpIndex + 1) {
+          matchScore += 15; // Close match
+        }
+      }
+      maxScore += 20;
+
+      // Project keywords matching (10% weight) - if user has projects
+      if (user.projects && user.projects.length > 0 && job.description) {
+        const projectKeywords = user.projects.join(' ').toLowerCase();
+        const jobDesc = job.description.toLowerCase();
+        const keywordMatches = user.projects.filter(project => 
+          jobDesc.includes(project.toLowerCase().substring(0, 20))
+        ).length;
+        if (keywordMatches > 0) {
+          matchScore += Math.min(10, keywordMatches * 3);
+        }
+      }
+      maxScore += 10;
+
+      // Education matching (5% weight) - if user has education
+      if (user.education && user.education.length > 0 && job.description) {
+        const educationKeywords = user.education.join(' ').toLowerCase();
+        const jobDesc = job.description.toLowerCase();
+        const eduMatches = user.education.filter(edu => 
+          jobDesc.includes(edu.toLowerCase().substring(0, 15))
+        ).length;
+        if (eduMatches > 0) {
+          matchScore += Math.min(5, eduMatches * 2);
+        }
+      }
+      maxScore += 5;
+
+      // Career goals matching (5% weight) - if user has career goals
+      if (user.careerGoals && user.careerGoals.length > 0 && job.description) {
+        const goalsText = user.careerGoals.join(' ').toLowerCase();
+        const jobDesc = job.description.toLowerCase();
+        const jobTitle = job.title.toLowerCase();
+        const goalMatches = user.careerGoals.filter(goal => {
+          const goalLower = goal.toLowerCase();
+          return jobDesc.includes(goalLower.substring(0, 20)) || 
+                 jobTitle.includes(goalLower.substring(0, 15));
+        }).length;
+        if (goalMatches > 0) {
+          matchScore += Math.min(5, goalMatches * 2);
+        }
+      }
+      maxScore += 5;
+
+      const matchPercentage = Math.round((matchScore / maxScore) * 100);
 
       return {
         ...job.toObject(),

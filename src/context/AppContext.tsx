@@ -11,6 +11,9 @@ interface User {
   bio: string;
   profilePicture?: string;
   experience: string;
+  experienceSummary?: string;
+  projects: string[];
+  education: string[];
   skills: string[];
   careerGoals: string[];
   createdAt: string;
@@ -233,6 +236,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       
       if (response.success) {
         setUser(response.user);
+        // Clear job recommendations flag on fresh login - user needs to generate again
+        localStorage.removeItem('job_recommendations_generated');
         return true;
       } else {
         setError(response.message || 'Login failed');
@@ -248,6 +253,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const { password: _, ...userWithoutPassword } = user;
         setUser(userWithoutPassword);
         localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userWithoutPassword));
+        // Clear job recommendations flag on fresh login - user needs to generate again
+        localStorage.removeItem('job_recommendations_generated');
         return true;
       } else {
         setError('Invalid email or password');
@@ -279,6 +286,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       
       if (response.success) {
         setUser(response.user);
+        // Clear job recommendations flag on registration - new user needs to generate
+        localStorage.removeItem('job_recommendations_generated');
         return true;
       } else {
         setError(response.message || 'Registration failed');
@@ -320,6 +329,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setSavedJobs([]);
     setAppliedJobs([]);
+    // Clear job recommendations generation flag on logout
+    localStorage.removeItem('job_recommendations_generated');
   };
 
   const addSavedJob = async (job: SavedJob) => {

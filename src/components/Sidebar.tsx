@@ -1,4 +1,4 @@
-import { Home, MapPin, BookOpen, User, Heart } from 'lucide-react';
+import { Home, MapPin, BookOpen, User, Heart, Sparkles } from 'lucide-react';
 import { cn } from './ui/utils';
 
 interface SidebarProps {
@@ -11,6 +11,7 @@ const menuItems = [
   { id: 'home', icon: Home, label: 'Home' },
   { id: 'career-paths', icon: MapPin, label: 'Career Paths' },
   { id: 'skills', icon: BookOpen, label: 'Skills' },
+  { id: 'career-advisor', icon: Sparkles, label: 'AI Career Advisor' },
   { id: 'saved-jobs', icon: Heart, label: 'Saved Jobs' },
   { id: 'profile', icon: User, label: 'Profile' },
 ];

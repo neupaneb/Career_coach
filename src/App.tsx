@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { LoginPage } from './components/LoginPage';
 import { Dashboard } from './components/Dashboard';
 import { AppProvider, useApp } from './context/AppContext';
+import { AIRecommendationsProvider } from './context/AIRecommendationsContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Loader2 } from 'lucide-react';
 
@@ -40,7 +41,9 @@ export default function App() {
   return (
     <ErrorBoundary>
       <AppProvider>
-        <AppContent />
+        <AIRecommendationsProvider>
+          <AppContent />
+        </AIRecommendationsProvider>
       </AppProvider>
     </ErrorBoundary>
   );

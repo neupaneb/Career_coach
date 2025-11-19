@@ -5,6 +5,9 @@ import { CareerRecommendations } from './CareerRecommendations';
 import { UserProfile } from './UserProfile';
 import { SkillTracker } from './SkillTracker';
 import { SavedJobs } from './SavedJobs';
+import { CareerAdvisor } from './CareerAdvisor';
+import { CareerPaths } from './CareerPaths';
+import { HomeDashboard } from './HomeDashboard';
 import { Sheet, SheetContent } from './ui/sheet';
 import { useApp } from '../context/AppContext';
 import { ErrorBoundary } from './ErrorBoundary';
@@ -29,43 +32,23 @@ export function Dashboard({ onLogout }: DashboardProps) {
 
   const renderContent = useMemo(() => {
     try {
-      switch (activeTab) {
-        case 'home':
-          return (
-            <div className="space-y-6">
-              <div className="mb-6">
-                <h1 className="text-3xl font-bold text-slate-900 mb-2">Career Coach AI</h1>
-                <p className="text-sm text-slate-600">Your personalized career dashboard</p>
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                  <ErrorBoundary>
-                    <CareerRecommendations />
-                  </ErrorBoundary>
-                </div>
-                <div className="space-y-6">
-                  <ErrorBoundary>
-                    <UserProfile onLogout={handleLogout} />
-                  </ErrorBoundary>
-                  <div className="lg:hidden">
-                    <ErrorBoundary>
-                      <SkillTracker />
-                    </ErrorBoundary>
-                  </div>
-                </div>
-              </div>
-            </div>
+    switch (activeTab) {
+      case 'home':
+        return (
+            <ErrorBoundary>
+              <HomeDashboard onLogout={handleLogout} onNavigate={handleTabChange} />
+            </ErrorBoundary>
           );
         case 'career-paths':
           return (
-            <div className="max-w-4xl w-full">
+            <div className="max-w-6xl w-full">
               <div className="mb-8 pb-4 border-b border-slate-200">
                 <h1 className="text-3xl font-bold text-slate-900 mb-2">Career Coach AI</h1>
                 <h2 className="text-2xl font-semibold text-slate-800 mt-2">Career Paths</h2>
-                <p className="text-sm text-slate-600 mt-2">Explore personalized career recommendations</p>
+                <p className="text-sm text-slate-600 mt-2">Explore personalized career recommendations and AI-generated paths</p>
               </div>
               <ErrorBoundary>
-                <CareerRecommendations />
+                <CareerPaths />
               </ErrorBoundary>
             </div>
           );
@@ -82,21 +65,34 @@ export function Dashboard({ onLogout }: DashboardProps) {
               </ErrorBoundary>
             </div>
           );
-        case 'saved-jobs':
+        case 'career-advisor':
           return (
+            <div className="max-w-4xl w-full">
+              <div className="mb-8 pb-4 border-b border-slate-200">
+                <h1 className="text-3xl font-bold text-slate-900 mb-2">Career Coach AI</h1>
+                <h2 className="text-2xl font-semibold text-slate-800 mt-2">AI Career Advisor</h2>
+                <p className="text-sm text-slate-600 mt-2">Get personalized career advice powered by AI</p>
+              </div>
+              <ErrorBoundary>
+                <CareerAdvisor />
+              </ErrorBoundary>
+          </div>
+        );
+        case 'saved-jobs':
+        return (
             <div className="max-w-4xl w-full">
               <div className="mb-8 pb-4 border-b border-slate-200">
                 <h1 className="text-3xl font-bold text-slate-900 mb-2">Career Coach AI</h1>
                 <h2 className="text-2xl font-semibold text-slate-800 mt-2">Saved Jobs</h2>
                 <p className="text-sm text-slate-600 mt-2">Your saved job opportunities</p>
-              </div>
+          </div>
               <ErrorBoundary>
                 <SavedJobs />
               </ErrorBoundary>
-            </div>
-          );
-        case 'profile':
-          return (
+          </div>
+        );
+      case 'profile':
+        return (
             <div className="max-w-2xl w-full">
               <div className="mb-8 pb-4 border-b border-slate-200">
                 <h1 className="text-3xl font-bold text-slate-900 mb-2">Career Coach AI</h1>
@@ -104,12 +100,12 @@ export function Dashboard({ onLogout }: DashboardProps) {
                 <p className="text-sm text-slate-600 mt-2">Manage your profile information</p>
               </div>
               <ErrorBoundary>
-                <UserProfile onLogout={handleLogout} />
+                <UserProfile onLogout={handleLogout} onNavigate={handleTabChange} />
               </ErrorBoundary>
-            </div>
-          );
+          </div>
+        );
         default:
-          return (
+        return (
             <div className="text-center py-12">
               <p className="text-muted-foreground">Page not found</p>
             </div>
@@ -120,8 +116,8 @@ export function Dashboard({ onLogout }: DashboardProps) {
       return (
         <div className="text-center py-12">
           <p className="text-red-600">An error occurred. Please try refreshing the page.</p>
-        </div>
-      );
+          </div>
+        );
     }
   }, [activeTab, handleLogout]);
 
@@ -139,14 +135,14 @@ export function Dashboard({ onLogout }: DashboardProps) {
         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen} modal={true}>
           <SheetContent side="left" className="p-0 w-64 z-[100]">
             <ErrorBoundary>
-              <Sidebar 
-                activeTab={activeTab} 
-                onTabChange={(tab) => {
+            <Sidebar 
+              activeTab={activeTab} 
+              onTabChange={(tab) => {
                   handleTabChange(tab);
-                  setIsMobileMenuOpen(false);
-                }} 
-                isMobile 
-              />
+                setIsMobileMenuOpen(false);
+              }} 
+              isMobile 
+            />
             </ErrorBoundary>
           </SheetContent>
         </Sheet>
@@ -154,10 +150,10 @@ export function Dashboard({ onLogout }: DashboardProps) {
         {/* Main Content */}
         <div className="flex-1 min-w-0 relative z-0">
           <ErrorBoundary>
-            <TopNavbar 
-              onMenuClick={() => setIsMobileMenuOpen(true)}
-              showMenuButton={true}
-            />
+          <TopNavbar 
+            onMenuClick={() => setIsMobileMenuOpen(true)}
+            showMenuButton={true}
+          />
           </ErrorBoundary>
           
           <main className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto relative z-0">

@@ -8,32 +8,30 @@ import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Alert, AlertDescription } from './ui/alert';
-import { MapPin, Calendar, Trophy, LogOut, Edit, Save, X, Plus, Loader2, CheckCircle } from 'lucide-react';
+import { MapPin, Calendar, LogOut, Edit, Save, X, Plus, Loader2, CheckCircle, Briefcase, FolderKanban, GraduationCap, Sparkles } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { ProfilePictureUpload } from './ProfilePictureUpload';
+import { ResumeUpload } from './ResumeUpload';
 
-const userSkills = [
-  'JavaScript', 'React', 'TypeScript', 'Node.js', 'Python', 'SQL', 'Git', 'AWS'
-];
-
-const achievements = [
-  { title: 'Frontend Master', description: 'Completed advanced React course', date: '2024-01-15' },
-  { title: 'Problem Solver', description: 'Solved 100+ coding challenges', date: '2024-02-20' },
-  { title: 'Team Player', description: 'Led 3 successful projects', date: '2024-03-10' }
-];
+// Removed hardcoded data - using real user data from context
 
 interface UserProfileProps {
   onLogout: () => void;
+  onNavigate?: (tab: string) => void;
 }
 
-export function UserProfile({ onLogout }: UserProfileProps) {
+export function UserProfile({ onLogout, onNavigate }: UserProfileProps) {
   const { user, updateUserProfile, isLoading, error } = useApp();
   const [isEditing, setIsEditing] = useState(false);
   const [newSkill, setNewSkill] = useState('');
   const [newGoal, setNewGoal] = useState('');
+  const [newProject, setNewProject] = useState('');
+  const [newEducation, setNewEducation] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
+  const [isGeneratingJobs, setIsGeneratingJobs] = useState(false);
+  const [selectedCareerGoal, setSelectedCareerGoal] = useState<string>('');
 
   if (!user) return null;
 
@@ -108,19 +106,109 @@ export function UserProfile({ onLogout }: UserProfileProps) {
     });
   };
 
-  const addGoal = () => {
-    if (newGoal.trim() && !user.careerGoals.includes(newGoal.trim())) {
-      updateUserProfile({
-        careerGoals: [...user.careerGoals, newGoal.trim()]
+  const addGoal = async () => {
+    const trimmedGoal = newGoal.trim();
+    if (!trimmedGoal) {
+      setError('Please enter a career goal.');
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+
+    const currentGoals = user.careerGoals || [];
+    if (currentGoals.includes(trimmedGoal)) {
+      setError('This career goal already exists.');
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+
+    try {
+      const newGoals = [...currentGoals, trimmedGoal];
+      console.log('Adding career goal:', trimmedGoal);
+      console.log('New goals array:', newGoals);
+      
+      await updateUserProfile({
+        careerGoals: newGoals
       });
+      
       setNewGoal('');
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
+    } catch (err) {
+      console.error('Error adding career goal:', err);
+      setError('Failed to add career goal. Please try again.');
+      setTimeout(() => setError(null), 3000);
     }
   };
 
   const removeGoal = (goalToRemove: string) => {
     updateUserProfile({
-      careerGoals: user.careerGoals.filter(goal => goal !== goalToRemove)
+      careerGoals: (user.careerGoals || []).filter(goal => goal !== goalToRemove)
     });
+  };
+
+  const addProject = () => {
+    if (newProject.trim() && !(user.projects || []).includes(newProject.trim())) {
+      updateUserProfile({
+        projects: [...(user.projects || []), newProject.trim()]
+      });
+      setNewProject('');
+    }
+  };
+
+  const removeProject = (projectToRemove: string) => {
+    updateUserProfile({
+      projects: (user.projects || []).filter(project => project !== projectToRemove)
+    });
+  };
+
+  const addEducation = () => {
+    if (newEducation.trim() && !(user.education || []).includes(newEducation.trim())) {
+      updateUserProfile({
+        education: [...(user.education || []), newEducation.trim()]
+      });
+      setNewEducation('');
+    }
+  };
+
+  const removeEducation = (educationToRemove: string) => {
+    updateUserProfile({
+      education: (user.education || []).filter(edu => edu !== educationToRemove)
+    });
+  };
+
+  const handleGenerateJobs = async () => {
+    // Check if user has skills - required for generation
+    if (!user.skills || user.skills.length === 0) {
+      setError('Please add at least one skill to your profile first. You can upload a resume to extract skills automatically.');
+      return;
+    }
+
+    // Career goal is required
+    if (!selectedCareerGoal) {
+      setError('Please select a career goal to generate job recommendations.');
+      return;
+    }
+
+    setIsGeneratingJobs(true);
+    try {
+      // Use profile data (skills, experience, projects, education) + selected career goal
+      // Mark that recommendations have been generated
+      localStorage.setItem('job_recommendations_generated', 'true');
+      setSaveSuccess(true);
+      setTimeout(() => {
+        setSaveSuccess(false);
+        if (onNavigate) {
+          onNavigate('home');
+          // Force refresh by dispatching a custom event
+          window.dispatchEvent(new CustomEvent('refreshRecommendations'));
+        }
+      }, 500);
+    } catch (err) {
+      console.error('Error generating jobs:', err);
+      setError('Failed to generate jobs. Please try again.');
+    } finally {
+      setIsGeneratingJobs(false);
+    }
   };
 
   return (
@@ -140,112 +228,7 @@ export function UserProfile({ onLogout }: UserProfileProps) {
       <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-blue-50/30">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Profile Overview</CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsEditing(!isEditing)}
-              className="flex items-center gap-2"
-            >
-              <Edit className="h-4 w-4" />
-              {isEditing ? 'Cancel' : 'Edit Profile'}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-6">
-            <ProfilePictureUpload
-              currentPicture={user.profilePicture}
-              onUpload={(imageUrl) => updateUserProfile({ profilePicture: imageUrl })}
-              isLoading={isSaving}
-            />
-          </div>
-          
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-blue-200 bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center shadow-md flex-shrink-0">
-                {user.profilePicture ? (
-                  <img 
-                    src={user.profilePicture} 
-                    alt={`${user.firstName} ${user.lastName}`}
-                    className="w-full h-full object-cover rounded-full"
-                  />
-                ) : (
-                  <span className="text-white text-xl font-semibold">
-                    {user.firstName[0]}{user.lastName[0]}
-                  </span>
-                )}
-              </div>
-              <div>
-                {isEditing ? (
-                  <div className="space-y-2">
-                    <div className="flex gap-2">
-                      <div className="w-32">
-                        <Input
-                          value={user.firstName}
-                          onChange={(e) => updateUserProfile({ firstName: e.target.value })}
-                          placeholder="First Name"
-                          className={formErrors.firstName ? 'border-red-500' : ''}
-                        />
-                        {formErrors.firstName && (
-                          <p className="text-sm text-red-500 mt-1">{formErrors.firstName}</p>
-                        )}
-                      </div>
-                      <div className="w-32">
-                        <Input
-                          value={user.lastName}
-                          onChange={(e) => updateUserProfile({ lastName: e.target.value })}
-                          placeholder="Last Name"
-                          className={formErrors.lastName ? 'border-red-500' : ''}
-                        />
-                        {formErrors.lastName && (
-                          <p className="text-sm text-red-500 mt-1">{formErrors.lastName}</p>
-                        )}
-                      </div>
-                    </div>
-                    <Input
-                      value={user.title}
-                      onChange={(e) => updateUserProfile({ title: e.target.value })}
-                      placeholder="Job Title"
-                    />
-                    <div className="flex gap-2">
-                      <Select value={user.experience} onValueChange={(value) => updateUserProfile({ experience: value })}>
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="entry">Entry Level</SelectItem>
-                          <SelectItem value="mid">Mid Level</SelectItem>
-                          <SelectItem value="senior">Senior Level</SelectItem>
-                          <SelectItem value="executive">Executive</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Input
-                        value={user.location}
-                        onChange={(e) => updateUserProfile({ location: e.target.value })}
-                        placeholder="Location"
-                        className="w-40"
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <h3>{user.firstName} {user.lastName}</h3>
-                    <p className="text-muted-foreground">{user.title}</p>
-                    <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        {user.location}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        Joined Jan 2024
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            <CardTitle>Profile</CardTitle>
             <Button 
               variant="outline" 
               size="sm" 
@@ -256,29 +239,158 @@ export function UserProfile({ onLogout }: UserProfileProps) {
               Log Out
             </Button>
           </div>
+        </CardHeader>
+        <CardContent>
+          {/* Profile Overview - Simplified: Photo, Name, Bio, Education */}
+          <div className="space-y-4">
+            {/* Profile Picture and Name */}
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-blue-200 bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center shadow-md flex-shrink-0">
+                {user.profilePicture ? (
+                  <img 
+                    src={user.profilePicture} 
+                    alt={`${user.firstName} ${user.lastName}`}
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                ) : (
+                  <span className="text-white text-2xl font-semibold">
+                    {user.firstName[0]}{user.lastName[0]}
+                  </span>
+                )}
+              </div>
+              <div>
+                <h3 className="text-xl font-bold">{user.firstName} {user.lastName}</h3>
+                {isEditing && (
+                  <div className="mt-2 space-y-2">
+                    <div className="flex gap-2">
+                      <Input
+                        value={user.firstName}
+                        onChange={(e) => updateUserProfile({ firstName: e.target.value })}
+                        placeholder="First Name"
+                        className="w-32"
+                      />
+                      <Input
+                        value={user.lastName}
+                        onChange={(e) => updateUserProfile({ lastName: e.target.value })}
+                        placeholder="Last Name"
+                        className="w-32"
+                      />
+                    </div>
+                    <ProfilePictureUpload
+                      currentPicture={user.profilePicture}
+                      onUpload={(imageUrl) => updateUserProfile({ profilePicture: imageUrl })}
+                      isLoading={isSaving}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Bio */}
+            <div>
+              <Label htmlFor="bio" className="text-sm font-semibold">Bio</Label>
+              {isEditing ? (
+                <Textarea
+                  id="bio"
+                  value={user.bio}
+                  onChange={(e) => updateUserProfile({ bio: e.target.value })}
+                  placeholder="Tell us about yourself..."
+                  className="mt-1"
+                  rows={3}
+                />
+              ) : (
+                <p className="mt-1 text-sm text-slate-700">{user.bio || 'No bio added yet'}</p>
+              )}
+            </div>
+
+            {/* Education (University) */}
+            <div>
+              <Label className="text-sm font-semibold">Education</Label>
+              {isEditing ? (
+                <div className="mt-2 space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      value={newEducation}
+                      onChange={(e) => setNewEducation(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addEducation();
+                        }
+                      }}
+                      placeholder="Add education/university"
+                      className="flex-1"
+                    />
+                    <Button size="sm" onClick={addEducation} disabled={!newEducation.trim()}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {(user.education && user.education.length > 0) ? user.education.map((edu) => (
+                      <Badge key={edu} variant="outline" className="flex items-center gap-1">
+                        {edu}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-4 w-4 p-0 hover:bg-transparent"
+                          onClick={() => removeEducation(edu)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </Badge>
+                    )) : (
+                      <p className="text-sm text-slate-500 italic">No education added yet</p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-1">
+                  {(user.education && user.education.length > 0) ? (
+                    <div className="flex flex-wrap gap-2">
+                      {user.education.map((edu) => (
+                        <Badge key={edu} variant="outline">
+                          {edu}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500 italic">No education added yet</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
           
           {isEditing && (
-            <div className="mb-6">
-              <Label htmlFor="bio">Bio</Label>
-              <Textarea
-                id="bio"
-                value={user.bio}
-                onChange={(e) => updateUserProfile({ bio: e.target.value })}
-                placeholder="Tell us about yourself..."
-                className="mt-1"
-              />
+            <div className="mt-6 pt-4 border-t border-slate-200">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditing(!isEditing)}
+                className="flex items-center gap-2"
+              >
+                <Edit className="h-4 w-4" />
+                Cancel Editing
+              </Button>
+            </div>
+          )}
+          
+          {!isEditing && (
+            <div className="mt-6 pt-4 border-t border-slate-200">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditing(true)}
+                className="flex items-center gap-2"
+              >
+                <Edit className="h-4 w-4" />
+                Edit Profile
+              </Button>
             </div>
           )}
           
           <div className="space-y-4">
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <p>Career Progress</p>
-                <span className="text-sm text-muted-foreground">Level 8</span>
-              </div>
-              <Progress value={78} className="h-2" />
-              <p className="text-xs text-muted-foreground mt-1">78% to next level</p>
-            </div>
+            {/* Removed hardcoded career progress - can be calculated from real data if needed */}
             
             <div>
               <div className="flex items-center justify-between mb-3">
@@ -322,26 +434,31 @@ export function UserProfile({ onLogout }: UserProfileProps) {
                 )}
               </div>
             </div>
-
+            
             <div>
               <div className="flex items-center justify-between mb-3">
-                <p>Career Goals</p>
-                {isEditing && (
-                  <div className="flex gap-2">
-                    <Input
-                      value={newGoal}
-                      onChange={(e) => setNewGoal(e.target.value)}
-                      placeholder="Add goal"
-                      className="w-32"
-                    />
-                    <Button size="sm" onClick={addGoal}>
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
+                <p className="font-medium">Career Goals</p>
+                <div className="flex gap-2">
+                  <Input
+                    id="new-goal-input"
+                    value={newGoal}
+                    onChange={(e) => setNewGoal(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addGoal();
+                      }
+                    }}
+                    placeholder="Add career goal"
+                    className="w-40"
+                  />
+                  <Button size="sm" onClick={addGoal} disabled={!newGoal.trim()}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                {user.careerGoals.map((goal) => (
+                {(user.careerGoals && user.careerGoals.length > 0) ? user.careerGoals.map((goal) => (
                   <Badge 
                     key={goal} 
                     variant="outline" 
@@ -359,8 +476,198 @@ export function UserProfile({ onLogout }: UserProfileProps) {
                       </Button>
                     )}
                   </Badge>
-                ))}
+                )) : (
+                  <p className="text-sm text-slate-500 italic">No career goals added yet</p>
+                )}
               </div>
+            </div>
+      
+            {/* Experience Summary Section */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+                  <Briefcase className="h-4 w-4 text-green-600" />
+                  <p>Experience Summary</p>
+                </div>
+          </div>
+              {isEditing ? (
+                <Textarea
+                  value={user.experienceSummary || ''}
+                  onChange={(e) => updateUserProfile({ experienceSummary: e.target.value })}
+                  placeholder="Describe your work experience..."
+                  rows={4}
+                  className="resize-y"
+                />
+              ) : (
+                <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded border border-slate-200">
+                  {user.experienceSummary || 'No experience summary added yet.'}
+                </p>
+              )}
+            </div>
+
+            {/* Projects Section */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <FolderKanban className="h-4 w-4 text-purple-600" />
+                  <p>Projects</p>
+                </div>
+                {isEditing && (
+                  <div className="flex gap-2">
+                    <Input
+                      value={newProject}
+                      onChange={(e) => setNewProject(e.target.value)}
+                      placeholder="Add project"
+                      className="w-40"
+                    />
+                    <Button size="sm" onClick={addProject}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                {(user.projects || []).map((project) => (
+                  <div key={project} className="flex items-start justify-between p-2 bg-purple-50 rounded border border-purple-100">
+                    <p className="text-sm text-slate-700 flex-1">{project}</p>
+                    {isEditing && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0 hover:bg-transparent"
+                        onClick={() => removeProject(project)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                {(user.projects || []).length === 0 && (
+                  <p className="text-sm text-slate-500 italic">No projects added yet.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Education Section */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <GraduationCap className="h-4 w-4 text-amber-600" />
+                  <p>Education</p>
+                </div>
+                {isEditing && (
+                  <div className="flex gap-2">
+                    <Input
+                      value={newEducation}
+                      onChange={(e) => setNewEducation(e.target.value)}
+                      placeholder="Add education"
+                      className="w-40"
+                    />
+                    <Button size="sm" onClick={addEducation}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                {(user.education || []).map((edu) => (
+                  <div key={edu} className="flex items-start justify-between p-2 bg-amber-50 rounded border border-amber-100">
+                    <p className="text-sm text-slate-700 flex-1">{edu}</p>
+                    {isEditing && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0 hover:bg-transparent"
+                        onClick={() => removeEducation(edu)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    )}
+              </div>
+            ))}
+                {(user.education || []).length === 0 && (
+                  <p className="text-sm text-slate-500 italic">No education added yet.</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Job Generation Section */}
+          <div className="mt-6 pt-6 border-t border-slate-200">
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="h-5 w-5 text-blue-600" />
+              <p className="font-semibold text-slate-900">Generate Job Recommendations</p>
+            </div>
+            <p className="text-sm text-slate-600 mb-4">
+              Select a career goal and generate personalized job recommendations based on your profile data (skills, experience, projects, education from resume).
+            </p>
+            
+            <div className="space-y-4">
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <Label htmlFor="career-goal-select" className="text-sm font-semibold text-slate-900 mb-2 block">
+                  Select Career Goal: <span className="text-red-500">*</span>
+                </Label>
+                {user.careerGoals && user.careerGoals.length > 0 ? (
+                  <Select
+                    value={selectedCareerGoal}
+                    onValueChange={setSelectedCareerGoal}
+                  >
+                    <SelectTrigger id="career-goal-select" className="w-full">
+                      <SelectValue placeholder="Choose a career goal..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {user.careerGoals.map((goal) => (
+                        <SelectItem key={goal} value={goal}>
+                          {goal}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-sm text-amber-600">
+                      ⚠️ No career goals found. Please add a career goal above first.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const input = document.getElementById('new-goal-input');
+                        if (input) {
+                          input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          input.focus();
+                        }
+                      }}
+                    >
+                      Add Career Goal
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              <Button
+                onClick={handleGenerateJobs}
+                disabled={isGeneratingJobs || !user.skills || user.skills.length === 0 || !selectedCareerGoal}
+                className="w-full bg-blue-500 hover:bg-blue-600 text-slate-900 font-semibold py-6 rounded-lg"
+              >
+                {isGeneratingJobs ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating Recommendations...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Generate Job Recommendations
+                  </>
+                )}
+              </Button>
+
+              {(!user.skills || user.skills.length === 0) && (
+                <p className="text-xs text-amber-600">
+                  ⚠️ Add skills to your profile first. Upload a resume to extract skills automatically.
+                </p>
+              )}
             </div>
           </div>
 
@@ -387,31 +694,10 @@ export function UserProfile({ onLogout }: UserProfileProps) {
         </CardContent>
       </Card>
       
-      <Card className="shadow-lg border-0 bg-gradient-to-br from-white to-yellow-50/30">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-yellow-600" />
-            <CardTitle>Recent Achievements</CardTitle>
+          {/* Resume Upload Section */}
+          <div className="mt-6">
+            <ResumeUpload />
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {achievements.map((achievement) => (
-              <div key={achievement.title} className="border-l-4 border-blue-600 pl-4">
-                <h4>{achievement.title}</h4>
-                <p className="text-sm text-muted-foreground">{achievement.description}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {new Date(achievement.date).toLocaleDateString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric', 
-                    year: 'numeric' 
-                  })}
-                </p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
